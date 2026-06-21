@@ -1,0 +1,9 @@
+pyyaml
+jinja2
+rich
+requests
+
+# boto3
+# azure-identity
+# azure-mgmt-network
+# ncclient

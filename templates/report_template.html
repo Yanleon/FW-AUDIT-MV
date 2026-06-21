@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FW-AUDIT-MV Reporte</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f7fb; color: #1f2937; margin: 0; padding: 0; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 32px; }
+    .card { background: #ffffff; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); }
+    h1, h2, h3 { margin-top: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: left; }
+    .sev-Critical { color: #991b1b; font-weight: bold; }
+    .sev-High { color: #b45309; font-weight: bold; }
+    .sev-Medium { color: #1d4ed8; font-weight: bold; }
+    .sev-Low { color: #047857; font-weight: bold; }
+    .sev-Informational { color: #6b7280; font-weight: bold; }
+    ul { padding-left: 20px; }
+    code { background: #eef2ff; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>{{ dataset.metadata.project.name }}</h1>
+      <p><strong>Cliente:</strong> {{ dataset.metadata.project.client }}</p>
+      <p><strong>Tester:</strong> {{ dataset.metadata.project.tester }}</p>
+      <p><strong>Entorno:</strong> {{ dataset.metadata.project.environment }}</p>
+      <p><strong>Autorizacion:</strong> {{ dataset.metadata.project.authorization_id }}</p>
+      <p><strong>Timestamp:</strong> {{ dataset.metadata.timestamp }}</p>
+    </div>
+
+    <div class="card">
+      <h2>Resumen por Severidad</h2>
+      <table>
+        <thead>
+          <tr><th>Severidad</th><th>Total</th></tr>
+        </thead>
+        <tbody>
+          {% for severity, total in dataset.findings.summary.items() %}
+          <tr><td class="sev-{{ severity }}">{{ severity }}</td><td>{{ total }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Tabla de Hallazgos</h2>
+      <table>
+        <thead>
+          <tr><th>Severidad</th><th>Categoria</th><th>Titulo</th></tr>
+        </thead>
+        <tbody>
+          {% for finding in dataset.findings.findings %}
+          <tr>
+            <td class="sev-{{ finding.severity }}">{{ finding.severity }}</td>
+            <td>{{ finding.category }}</td>
+            <td>{{ finding.title }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Recomendaciones</h2>
+      <ul>
+        {% for item in dataset.findings.recommendations %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Anexo Tecnico</h2>
+      <p><strong>Carpeta de evidencia:</strong> <code>{{ dataset.evidence_dir }}</code></p>
+      <h3>Hallazgos Detallados</h3>
+      {% for finding in dataset.findings.findings %}
+      <div>
+        <h4>{{ loop.index }}. {{ finding.title }}</h4>
+        <p><strong>Severidad:</strong> {{ finding.severity }}</p>
+        <p><strong>Descripcion:</strong> {{ finding.description }}</p>
+        <p><strong>Recomendacion:</strong> {{ finding.recommendation }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>
