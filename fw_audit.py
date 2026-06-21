@@ -34,6 +34,107 @@ from modules.vendors.factory import VendorFactory
 
 APP_NAME = "FW-AUDIT-MV"
 SUPPORTED_MODES = {"full", "blackbox", "whitebox", "external", "internal", "tls", "egress", "report"}
+SUPPORTED_VENDORS = {
+    "fortigate",
+    "paloalto",
+    "checkpoint",
+    "cisco_asa_ftd",
+    "sophos",
+    "sonicwall",
+    "watchguard",
+    "juniper_srx",
+    "aws_network_firewall",
+    "azure_firewall",
+    "all",
+}
+VENDOR_PREREQUISITES = {
+    "fortigate": {
+        "titulo": "FortiGate",
+        "items": [
+            "Kali Linux con Python 3.10+, nmap, netcat-openbsd, testssl.sh y entorno virtual preparado.",
+            "Conectividad desde Kali hacia la IP de gestion del FortiGate y hacia los objetivos autorizados.",
+            "Token API valido definido en la variable de entorno FORTIGATE_TOKEN.",
+            "Usuario o perfil API con permisos de solo lectura o minimos necesarios sobre politicas, objetos, NAT, VPN e interfaces.",
+            "management_ip correcta en config.yaml y verify_ssl ajustado segun el certificado del equipo.",
+            "Autorizacion formal del alcance, ventana de trabajo y safe_mode habilitado para pruebas conservadoras.",
+        ],
+    },
+    "paloalto": {
+        "titulo": "Palo Alto",
+        "items": [
+            "Kali Linux con dependencias del proyecto instaladas.",
+            "Conectividad hacia la interfaz de gestion o endpoint API autorizado.",
+            "Token o credenciales API almacenadas en variables de entorno, nunca en el repositorio.",
+            "Permisos de lectura para politicas, objetos, zonas, NAT, VPN y perfiles de seguridad.",
+        ],
+    },
+    "checkpoint": {
+        "titulo": "Check Point",
+        "items": [
+            "Kali Linux con dependencias del proyecto instaladas.",
+            "Acceso autorizado a Management API del Security Management Server.",
+            "Variables de entorno CHECKPOINT_USER y CHECKPOINT_PASS configuradas.",
+            "Perfil con permisos de lectura para politica, objetos, NAT, logs y configuracion relevante.",
+        ],
+    },
+    "cisco_asa_ftd": {
+        "titulo": "Cisco ASA/FTD/FMC",
+        "items": [
+            "Kali Linux con dependencias del proyecto instaladas.",
+            "Acceso a ASA, FTD o preferiblemente FMC segun el metodo autorizado de consulta.",
+            "Credenciales o token resguardados en variables de entorno como CISCO_FMC_USER y CISCO_FMC_PASS.",
+            "Permisos de lectura sobre access policies, NAT, objetos, VPN y configuracion administrativa.",
+        ],
+    },
+    "sophos": {
+        "titulo": "Sophos",
+        "items": [
+            "Kali Linux con dependencias del proyecto instaladas.",
+            "Acceso autorizado a API o export de configuracion correspondiente.",
+            "Token o credenciales en variables de entorno.",
+        ],
+    },
+    "sonicwall": {
+        "titulo": "SonicWall",
+        "items": [
+            "Kali Linux con dependencias del proyecto instaladas.",
+            "Acceso autorizado a la gestion o API del firewall.",
+            "Credenciales en variables de entorno y permisos de solo lectura si es posible.",
+        ],
+    },
+    "watchguard": {
+        "titulo": "WatchGuard",
+        "items": [
+            "Kali Linux con dependencias del proyecto instaladas.",
+            "Acceso autorizado a Fireware o WatchGuard Cloud segun despliegue.",
+            "Credenciales en variables de entorno con alcance minimo necesario.",
+        ],
+    },
+    "juniper_srx": {
+        "titulo": "Juniper SRX",
+        "items": [
+            "Kali Linux con dependencias del proyecto instaladas.",
+            "Acceso autorizado por API, NETCONF o export de configuracion segun el entorno.",
+            "Credenciales o llaves protegidas fuera del repositorio.",
+        ],
+    },
+    "aws_network_firewall": {
+        "titulo": "AWS Network Firewall",
+        "items": [
+            "Kali Linux con dependencias del proyecto instaladas.",
+            "Credenciales AWS con permisos de solo lectura sobre Network Firewall, VPC, subredes y logs si aplica.",
+            "SDK boto3 habilitado si se amplia el conector en despliegues cloud reales.",
+        ],
+    },
+    "azure_firewall": {
+        "titulo": "Azure Firewall",
+        "items": [
+            "Kali Linux con dependencias del proyecto instaladas.",
+            "Identidad o credenciales Azure con permisos de lectura sobre Firewall Policy, recursos de red y logs si aplica.",
+            "SDKs de Azure instalados si se amplia el conector cloud.",
+        ],
+    },
+}
 console = Console()
 
 
@@ -41,9 +142,32 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Herramienta CLI para auditoria autorizada de firewalls multi-vendor."
     )
-    parser.add_argument("--config", required=True, help="Ruta al archivo YAML de configuracion.")
-    parser.add_argument("--mode", required=True, choices=sorted(SUPPORTED_MODES), help="Modo de ejecucion.")
+    parser.add_argument("--config", help="Ruta al archivo YAML de configuracion.")
+    parser.add_argument("--mode", choices=sorted(SUPPORTED_MODES), help="Modo de ejecucion.")
+    parser.add_argument(
+        "--prereqs",
+        choices=sorted(SUPPORTED_VENDORS),
+        help="Muestra prerrequisitos operativos para un vendor especifico o para todos.",
+    )
     return parser.parse_args()
+
+
+def validate_args(args: argparse.Namespace) -> None:
+    if args.prereqs:
+        return
+    if not args.config or not args.mode:
+        raise SystemExit("Debe indicar --config y --mode, o usar --prereqs <vendor>.")
+
+
+def print_prerequisites(vendor: str) -> None:
+    console.print(f"\n[bold cyan]{APP_NAME} Prerrequisitos[/bold cyan]\n")
+    vendor_keys = sorted(VENDOR_PREREQUISITES) if vendor == "all" else [vendor]
+    for key in vendor_keys:
+        data = VENDOR_PREREQUISITES[key]
+        console.print(f"[bold]{data['titulo']}[/bold]")
+        for item in data["items"]:
+            console.print(f"- {item}")
+        console.print("")
 
 
 def load_env_file(env_path: Path) -> None:
@@ -275,6 +399,11 @@ def empty_sections() -> tuple[dict[str, Any], dict[str, Any]]:
 
 def main() -> int:
     args = parse_args()
+    validate_args(args)
+    if args.prereqs:
+        print_prerequisites(args.prereqs)
+        return 0
+
     base_path = Path(__file__).resolve().parent
     load_env_file(base_path / ".env")
     config = load_config(Path(args.config).resolve())

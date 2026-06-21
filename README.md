@@ -62,6 +62,8 @@ WATCHGUARD_PASS=
 ## Ejemplos de ejecución
 
 ```bash
+python3 fw_audit.py --prereqs fortigate
+python3 fw_audit.py --prereqs all
 python3 fw_audit.py --config config.yaml --mode full
 python3 fw_audit.py --config config.yaml --mode blackbox
 python3 fw_audit.py --config config.yaml --mode whitebox
@@ -82,6 +84,27 @@ python3 fw_audit.py --config config.yaml --mode report
 - `tls`: enfocado en enumeración TLS segura.
 - `egress`: valida salida controlada hacia puertos definidos.
 - `report`: genera reportes desde resultados disponibles de la ejecución actual.
+
+## Consulta de prerrequisitos
+
+La herramienta incluye una consulta rápida para saber qué debes tener antes de auditar un fabricante concreto.
+
+Ejemplos:
+
+```bash
+python3 fw_audit.py --prereqs fortigate
+python3 fw_audit.py --prereqs checkpoint
+python3 fw_audit.py --prereqs all
+```
+
+Uso recomendado para FortiGate:
+
+- Confirmar que Kali tenga `nmap`, `netcat-openbsd`, `testssl.sh` y el entorno Python del proyecto.
+- Verificar conectividad desde Kali a la IP de gestión del firewall y a los targets autorizados.
+- Crear un token API y exportarlo como `FORTIGATE_TOKEN`.
+- Asignar permisos de solo lectura o mínimos necesarios para consultar políticas, objetos, NAT, VPN e interfaces.
+- Completar `management_ip` y `verify_ssl` en `config.yaml`.
+- Mantener `safe_mode: true` y trabajar con autorización formal del alcance.
 
 ## Fabricantes soportados
 
